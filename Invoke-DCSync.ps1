@@ -42,7 +42,6 @@ if ($confirmation -eq 'y') {
     Write-Host "[~] Extracting users from logfile" -ForegroundColor Yellow
     Write-Host "    > " $USERS -ForegroundColor Gray
     (Get-Content -LiteralPath $LOG) -notmatch '\$' | ForEach-Object {$_.Split("`t")[1]} > $USERS
-    Write-Host ""
 
     # create import file for customer
     Write-Host "[~] Create user/hash merge file" -ForegroundColor Yellow
