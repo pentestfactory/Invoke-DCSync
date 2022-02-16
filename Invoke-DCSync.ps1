@@ -25,6 +25,7 @@ $confirmation = Read-Host "Is the domain correct to execute DCSync on? (y/n)"
 if ($confirmation -eq 'y') {
 
     # create directory for storage
+    Write-Host ""
     Write-Host "[INFO] Creating new directory at $PATH" -ForegroundColor Gray
     New-Item -ItemType Directory -Force -Path $PATH | Out-Null
     
