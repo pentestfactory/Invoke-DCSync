@@ -67,4 +67,5 @@ if ($confirmation -eq 'y') {
     Write-Host ""
 }else{
     Write-Host "[!] Script aborted due to wrong domain. Please hardcode the domain in the PS1 script (line 21)." -ForegroundColor Red
+    Remove-Item -LiteralPath $PATH -Force -Recurse
 }
