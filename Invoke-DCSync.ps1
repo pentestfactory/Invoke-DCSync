@@ -45,6 +45,7 @@ if ($confirmation -eq 'y') {
 
     # create import file for customer
     Write-Host "[~] Create user/hash merge file" -ForegroundColor Yellow
+    Write-Host "    > " $IMPORTFILE -ForegroundColor Gray
     $File1 = Get-Content $USERS
     $File2 = Get-Content $HASHES
     for($i = 0; $i -lt $File1.Count; $i++)
@@ -53,11 +54,13 @@ if ($confirmation -eq 'y') {
     }
 
     # final message
+    Write-Host ""
     Write-Host "[OK] Hash extraction completed" -ForegroundColor Green
+    Write-Host ""
     explorer $PATH
 
     # reminder ADRecon
-    Write-Host "[!] Do not forget to run ADRecon" -ForegroundColor Red
+    Write-Host "[!] Do not forget to run ADRecon" -ForegroundColor Yellow
     Write-Host "    > iex(new-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/pentestfactory/ADRecon/master/ADRecon.ps1')" -ForegroundColor Gray
     Write-Host "    > Invoke-ADRecon -method LDAP -Collect Users -OutputType Excel -ADROutputDir $PATH" -ForegroundColor Gray
     Write-Host "    > Invoke-ADRecon -GenExcel <CSV-OUTPUT-FILES>" -ForegroundColor Gray
