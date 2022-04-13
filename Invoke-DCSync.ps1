@@ -92,9 +92,9 @@ if ($confirmation -eq 'y') {
     # create hashfile for pentest factory and convert user account attributes
     Write-Host ""
     Write-Host "[~] Create file with hashes only" -ForegroundColor Gray
-    $a = (Import-csv -Delimiter "`t" -Path $LOGFILE -header ID,SAMACCOUNTNAME,HASH,TYPE) -notmatch '\[DC\]' -notmatch '\[rpc\]' -notmatch "mimikatz\(powershell\)" -notmatch "for logfile : OK" -notmatch '\$'
-    foreach ($r in $a){ $r.type=DecodeUserAccountControl $r.type}
-    $a | select -Property hash,type | ConvertTo-Csv -NoTypeInformation | Select-Object -skip 1 > $PTFHASHES 
+    $csv_obj = (Import-csv -Delimiter "`t" -Path $LOGFILE -header ID,SAMACCOUNTNAME,HASH,TYPE) -notmatch '\[DC\]' -notmatch '\[rpc\]' -notmatch "mimikatz\(powershell\)" -notmatch "for logfile : OK" -notmatch '\$'
+    foreach ($row in $csv_obj){ $row.type=DecodeUserAccountControl $row.type}
+    $csv_obj | select -Property hash,type | ConvertTo-Csv -NoTypeInformation | Select-Object -skip 1 > $PTFHASHES 
 
     # create import file for customer
     Write-Host "[~] Create import file with samaccountnames and hashes" -ForegroundColor Gray
