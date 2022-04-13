@@ -82,7 +82,7 @@ if ($confirmation -eq 'y') {
 
     # using ADRecon to extract user details
     Write-Host "[!] Extracting user details via LDAP" -ForegroundColor Yellow
-    Invoke-ADRecon -method LDAP -Collect Users -OutputType Excel -ADROutputDir $PATH | Out-Null
+    Invoke-ADRecon -method LDAP -Collect Users -OutputType CSV -ADROutputDir $PATH | Out-Null
 
     # create temporary NTLM only and users only files
     (Get-Content -LiteralPath $LOGFILE) -notmatch '\$' | ForEach-Object {$_.Split("`t")[2]} > $HASHES
