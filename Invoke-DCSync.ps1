@@ -120,7 +120,7 @@ if ($confirmation -eq 'y') {
 
     # final message
     Write-Host ""
-    Write-Host "[OK] Extraction completed" -ForegroundColor Green
+    Write-Host "[OK] Extraction completed [" $csv_obj.length "users ]" -ForegroundColor Green
     Write-Host "  > Please submit the 'PTF' directory to Pentest Factory GmbH" -ForegroundColor Gray
     Write-Host "  > Please consider all files as confidential!" -ForegroundColor Gray
     Write-Host ""
