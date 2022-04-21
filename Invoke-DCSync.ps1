@@ -126,5 +126,5 @@ if ($confirmation -eq 'y') {
     explorer $PATH
 
 }else{
-    Write-Host "[!] Script aborted due to wrong domain. Please hardcode the domain in the PS1 script (line 21)." -ForegroundColor Red
+    Write-Host "[!] Script aborted due to wrong domain. Please hardcode the domain in the PS1 script (line 66)." -ForegroundColor Red
 }
