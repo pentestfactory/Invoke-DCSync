@@ -20,7 +20,9 @@ runas.exe /netonly /noprofile /user:mydomain.prod.dom\dcsyncUser "powershell.exe
 
 ## DCSync Preparation
 
-It is recommended to bypass AMSI for the current PowerShell session. Use a 0-Day payload!
+It is recommended to bypass AMSI for the current PowerShell session. 
+
+Either use a 0-Day payload or disable AV temporarily during the hash dumping process.
 
 # DCSync Execution
 
