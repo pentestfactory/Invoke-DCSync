@@ -75,4 +75,4 @@ As soon as the script finishes, a new Windows file explorer will open automatica
 
 **Q**: Do I have to conduct some form of cleanup after the script was run?
 
-**A**: Please re-active any AV/EDR solutions, which were previously deactivated. Furthermore, you may want to restart the computer on which the script was run. This ensures that all scripts, which were loaded into memory, are removed completely. Finally, ensure that the exported data is treated as very sensitive and stored securely. Only authorized personell should be able to access the DCSync exports.
+**A**: Please re-activate any AV/EDR solutions, which were previously deactivated. Furthermore, you may want to restart the computer on which the script was run. This ensures that all scripts, which were loaded into memory, are removed completely. Finally, ensure that the exported data is treated as very sensitive and stored securely. Only authorized personell should be able to access the DCSync exports.
