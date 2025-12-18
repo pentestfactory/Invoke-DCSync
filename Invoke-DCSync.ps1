@@ -9,6 +9,7 @@ $HASHES = $PATH + $DATE + "_" + "DCSync_NTLM_Hashes_FINAL" + $EXT
 $USERS = $PATH + $DATE + "_" + "DCSync_NTLM_Users_FINAL" + $EXT
 $PTFHASHES = $PATH + $DATE + "_" + "DCSync_NTLM_PTF_Hashes_FINAL" + $EXT
 $IMPORTFILE = $PATH + $DATE + "_" + "DCSync_NTLM_CUSTOMER_Importfile_FINAL" + $EXT
+$POLICY = $PATH + $DATE + "_" + "Domain_Password_Policy" + $EXT
 
 # helper function to convert user account control values
 Function DecodeUserAccountControl ([int]$UAC)
@@ -104,11 +105,15 @@ if ($confirmation -eq 'y') {
         ('{0},{1}' -f $File1[$i],$File2[$i]) |Add-Content $IMPORTFILE
     }
 
+    # using PowerView to extract default domain password policy
+    (Get-DomainPolicy).SystemAccess > $POLICY
+    
     # sort files into dirs
     New-Item -Path $PATH\PTF -ItemType Directory | Out-Null
     New-Item -Path $PATH\CUSTOMER -ItemType Directory | Out-Null
     Move-Item -Path $PATH\CSV-Files\Users.csv -Destination $PATH\PTF\.
     Move-Item -Path $PTFHASHES -Destination $PATH\PTF\.
+    Move-Item -Path $POLICY -Destination $PATH\PTF\.
     Move-Item -Path $IMPORTFILE -Destination $PATH\CUSTOMER\.
     Move-Item -Path $LOGFILE -Destination $PATH\CUSTOMER\.
    
