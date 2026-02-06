@@ -257,12 +257,10 @@ if [ -z "$SKIP_PYADRECON" ]; then
             echo -e "${YELLOW}[!] Warning: PasswordPolicy.csv not found in expected location${NC}"
         fi
         
-        # Remove the CSV-Files directory if it's empty
+        # Remove the CSV-Files directory
         if [ -d "${BASE_PATH}/PTF/CSV-Files" ]; then
-            if [ -z "$(ls -A ${BASE_PATH}/PTF/CSV-Files)" ]; then
-                rm -rf "${BASE_PATH}/PTF/CSV-Files"
-                echo -e "${GRAY}[~] Cleaned up temporary CSV-Files directory${NC}"
-            fi
+            rm -rf "${BASE_PATH}/PTF/CSV-Files"
+            echo -e "${GRAY}[~] Cleaned up temporary CSV-Files directory${NC}"
         fi
     else
         echo ""
