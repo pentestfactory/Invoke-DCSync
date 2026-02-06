@@ -80,6 +80,14 @@ if [ ! -d "$PYADRECON_PATH" ]; then
     fi
 else
     echo -e "${GREEN}[OK] PyADRecon found at ${PYADRECON_PATH}${NC}"
+    echo -e "${BLUE}[~] Updating PyADRecon to latest version...${NC}"
+    (cd "$PYADRECON_PATH" && git pull) > /dev/null 2>&1
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}[OK] PyADRecon updated successfully${NC}"
+    else
+        echo -e "${YELLOW}[!] Warning: Could not update PyADRecon (continuing with existing version)${NC}"
+    fi
 fi
 
 # Check if pyadrecon.py exists
@@ -200,7 +208,7 @@ if [ -z "$SKIP_PYADRECON" ]; then
             -u "${USERNAME}" \
             -p "${PASSWORD}" \
             -d "${DOMAIN}" \
-            --collect users \
+            --collect users,passwordpolicy \
             --no-excel \
             -o "${ABS_OUTPUT_PATH}/" > "${PYADRECON_LOG}" 2>&1
     ) &
@@ -229,26 +237,32 @@ if [ -z "$SKIP_PYADRECON" ]; then
     
     if [ $PYADRECON_EXIT_CODE -eq 0 ]; then
         echo ""
-        echo -e "${GREEN}[OK] User metadata collection completed${NC}"
+        echo -e "${GREEN}[OK] PyADRecon collection completed${NC}"
         
-        # Check if Users.csv was created in CSV-Files subdirectory
+        # Move Users.csv to PTF root directory
         if [ -f "${BASE_PATH}/PTF/CSV-Files/Users.csv" ]; then
             USER_METADATA_COUNT=$(tail -n +2 "${BASE_PATH}/PTF/CSV-Files/Users.csv" 2>/dev/null | wc -l)
             echo -e "${GRAY}    Collected metadata for ${USER_METADATA_COUNT} users${NC}"
-            
-            # Move Users.csv to PTF root directory
             echo -e "${GRAY}[~] Moving Users.csv to PTF root directory...${NC}"
             mv "${BASE_PATH}/PTF/CSV-Files/Users.csv" "${BASE_PATH}/PTF/Users.csv"
-            
-            if [ $? -eq 0 ]; then
-                echo -e "${GREEN}[OK] Users.csv moved to PTF directory${NC}"
-                
-                # Remove the now-empty CSV-Files directory
+        else
+            echo -e "${YELLOW}[!] Warning: Users.csv not found in expected location${NC}"
+        fi
+        
+        # Move PasswordPolicy.csv to PTF root directory
+        if [ -f "${BASE_PATH}/PTF/CSV-Files/PasswordPolicy.csv" ]; then
+            echo -e "${GRAY}[~] Moving PasswordPolicy.csv to PTF root directory...${NC}"
+            mv "${BASE_PATH}/PTF/CSV-Files/PasswordPolicy.csv" "${BASE_PATH}/PTF/PasswordPolicy.csv"
+        else
+            echo -e "${YELLOW}[!] Warning: PasswordPolicy.csv not found in expected location${NC}"
+        fi
+        
+        # Remove the CSV-Files directory if it's empty
+        if [ -d "${BASE_PATH}/PTF/CSV-Files" ]; then
+            if [ -z "$(ls -A ${BASE_PATH}/PTF/CSV-Files)" ]; then
                 rm -rf "${BASE_PATH}/PTF/CSV-Files"
                 echo -e "${GRAY}[~] Cleaned up temporary CSV-Files directory${NC}"
             fi
-        else
-            echo -e "${YELLOW}[!] Warning: Users.csv not found in expected location${NC}"
         fi
     else
         echo ""
@@ -294,10 +308,17 @@ echo "     ├─ $(basename $PTFHASHES)"
 echo "     │  └─ Hash file with account status (hash,status)"
 
 if [ -f "${BASE_PATH}/PTF/Users.csv" ]; then
-    echo "     └─ Users.csv"
-    echo "        └─ User metadata from Active Directory"
+    echo "     ├─ Users.csv"
+    echo "     │  └─ User metadata from Active Directory"
 else
-    echo "     └─ Users.csv (NOT CREATED - PyADRecon skipped/failed)"
+    echo "     ├─ Users.csv (NOT CREATED - PyADRecon skipped/failed)"
+fi
+
+if [ -f "${BASE_PATH}/PTF/PasswordPolicy.csv" ]; then
+    echo "     └─ PasswordPolicy.csv"
+    echo "        └─ Domain password policy information"
+else
+    echo "     └─ PasswordPolicy.csv (NOT CREATED - PyADRecon skipped/failed)"
 fi
 
 echo ""
