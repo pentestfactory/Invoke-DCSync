@@ -146,10 +146,16 @@ wait $READER_PID 2>/dev/null
 # Clean up pipe
 rm -f "$MKFIFO_PIPE"
 
+# Count the actual hashes from the logfile (subshell variable doesn't propagate)
+FINAL_HASH_COUNT=$(grep -c ":::" "${LOGFILE}" | grep -v '\$:' | wc -l)
+if [ -f "${LOGFILE}" ]; then
+    FINAL_HASH_COUNT=$(grep ":::" "${LOGFILE}" | grep -v '\$:' | grep -v "^\[" | wc -l)
+fi
+
 # Print final newline and status
 if [ $SECRETSDUMP_EXIT_CODE -eq 0 ]; then
     echo ""
-    echo -e "    ${GREEN}[✓] Extraction complete: ${HASH_COUNT} hashes dumped${NC}"
+    echo -e "    ${GREEN}[✓] Extraction complete: ${FINAL_HASH_COUNT} hashes dumped${NC}"
 else
     echo ""
     echo -e "    ${RED}[✗] Secretsdump failed with exit code: ${SECRETSDUMP_EXIT_CODE}${NC}"
